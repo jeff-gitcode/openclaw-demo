@@ -7,23 +7,94 @@ OpenClaw is a self-hosted AI agent platform. It runs a local gateway that connec
 
 ---
 
+System Architecture
+
+   ╔══════════════════════════════════════════════════════════════════╗
+   ║                      OPENCLAW SYSTEM                             ║
+   ╚══════════════════════════════════════════════════════════════════╝
+
+     ┌─────────────────────┐         ┌─────────────────────────────┐
+     │   TELEGRAM (Cloud)  │         │     DASHBOARD (Browser)     │
+     │  Polling mode       │         │  http://127.0.0.1:18789/    │
+     │  Bot: @<TELEGRAM_BOT_NAME>    │  SSH tunnel from client     │
+     └──────────┬──────────┘         └──────────────┬──────────────┘
+                │ messages                           │ HTTP + token
+                ▼                                   ▼
+     ╔══════════════════════════════════════════════════════════════╗
+     ║            OPENCLAW GATEWAY                                  ║
+     ║            ws://127.0.0.1:18789                              ║
+     ║                                                              ║
+     ║   Auth token: <GATEWAY_AUTH_TOKEN>                           ║
+     ║   Config: ~/.openclaw/openclaw.json                          ║
+     ║   Log: /tmp/openclaw/openclaw-YYYY-MM-DD.log                 ║
+     ╚═══════════╤══════════════════════════════════════════════════╝
+                 │
+                 │  model requests
+                 │
+         ┌───────┴────────────────────────────────┐
+         │                                        │
+         ▼  PRIMARY                               ▼  FALLBACK
+     ┌──────────────────────┐        ┌────────────────────────────┐
+     │  OPENROUTER (Cloud)  │        │    OLLAMA  (Local)         │
+     │  openrouter/auto     │        │    http://localhost:11434  │
+     │  API key: <OPENROUTER_API_KEY>│                            │
+     │  Context: 1,953k     │        │  ┌─────────────────────┐  │
+     │  Input: text+image   │        │  │ qwen3:8b    (128k)  │← fallback #1
+     └──────────────────────┘        │  │ qwen3:latest (40k)  │← fallback #2
+                                     │  │ qwen3-fast:latest   │  │
+                                     │  │ llama3.2:3b         │  │
+                                     │  │ gpt-oss:latest(13GB)│  │
+                                     │  │ qwen2.5:0.5b        │  │
+                                     │  └─────────────────────┘  │
+                                     └────────────────────────────┘
+
+     ┌──────────────────────────────────────────────────────────────┐
+     │                   FILE SYSTEM                                │
+     │                                                              │
+     │  ~/.openclaw/                                                │
+     │    ├── openclaw.json          ← main config                  │
+     │    ├── agents/main/agent/                                    │
+     │    │     ├── auth-profiles.json  ← OpenRouter API key        │
+     │    │     └── models.json                                     │
+     │    ├── workspace/             ← agent memory & identity      │
+     │    │     ├── SOUL.md                                         │
+     │    │     ├── USER.md                                         │
+     │    │     └── AGENTS.md                                       │
+     │    ├── memory/main.sqlite     ← long-term memory             │
+     │    └── credentials/           ← Telegram pairing             │
+     │                                                              │
+     │  /mnt/c/Users/<USERNAME>/     ← Windows drive (mounted)      │
+     │    └── OPENCLAW_SETUP.md      ← your setup guide             │
+     └──────────────────────────────────────────────────────────────┘
+
+     ┌──────────────────────────────────────────────────────────────┐
+     │            GITHUB COPILOT CLI  (this session)                │
+     │                                                              │
+     │  ~/.copilot/skills/  (Superpowers skills installed)          │
+     │    brainstorming · test-driven-development                   │
+     │    systematic-debugging · writing-plans · and more...        │
+     └──────────────────────────────────────────────────────────────┘
+
+     USER ──→ Telegram ──→ Gateway ──→ OpenRouter/Ollama ──→ reply
+---
+
 ## Server Info
 
 | Item | Value |
 |------|-------|
 | OS | Linux (server) |
 | Gateway URL | http://127.0.0.1:18789 |
-| Dashboard URL | http://127.0.0.1:18789/#token=<REDACTED_TOKEN> |
-| Auth Token | `<REDACTED_TOKEN>` |
+| Dashboard URL | http://127.0.0.1:18789/#token=<GATEWAY_AUTH_TOKEN> |
+| Auth Token | `<GATEWAY_AUTH_TOKEN>` |
 | Config file | `~/.openclaw/openclaw.json` |
 | Log file | `/tmp/openclaw/openclaw-YYYY-MM-DD.log` |
 | OpenClaw binary | `~/.nvm/versions/node/vXX.XX.X/bin/openclaw` |
 
-To access dashboard remotely, SSH tunnel from your Windows machine:
+To access dashboard remotely, SSH tunnel from your client machine:
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 <your-user>@<server-ip>
 ```
-Then open: `http://127.0.0.1:18789/#token=<REDACTED_TOKEN>`
+Then open: `http://127.0.0.1:18789/#token=<GATEWAY_AUTH_TOKEN>`
 
 ---
 
@@ -31,7 +102,7 @@ Then open: `http://127.0.0.1:18789/#token=<REDACTED_TOKEN>`
 
 ### Primary: OpenRouter (Cloud)
 - **Provider**: OpenRouter
-- **Model**: `openrouter/auto` (auto-selects best available free model)
+- **Model**: `openrouter/auto` (auto-selects best available model)
 - **API Key**: `<OPENROUTER_API_KEY>`
 - **Auth file**: `~/.openclaw/agents/main/agent/auth-profiles.json`
 
@@ -113,7 +184,7 @@ tail -f /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 3. Restart gateway: kill old PID, run `openclaw gateway run`
 
 ### "unauthorized: gateway token missing" on dashboard
-- Open: `http://127.0.0.1:18789/#token=<REDACTED_TOKEN>`
+- Open: `http://127.0.0.1:18789/#token=<GATEWAY_AUTH_TOKEN>`
 - Or run `openclaw dashboard` to get the full URL with token
 
 ### OpenRouter not responding
@@ -138,7 +209,7 @@ tail -f /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 
 ## GitHub Copilot CLI Skills
 
-14 Superpowers skills installed at `~/.copilot/skills/`:
+Several Superpowers skills installed at `~/.copilot/skills/`:
 
 - brainstorming
 - dispatching-parallel-agents
