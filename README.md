@@ -7,7 +7,7 @@ OpenClaw is a self-hosted AI agent platform. It runs a local gateway that connec
 
 ---
 
-System Architecture
+## System Architecture
 
    ╔══════════════════════════════════════════════════════════════════╗
    ║                      OPENCLAW SYSTEM                             ║
@@ -204,29 +204,6 @@ tail -f /tmp/openclaw/openclaw-$(date +%Y-%m-%d).log
 | `~/.openclaw/workspace/` | Agent workspace (SOUL.md, USER.md, etc.) |
 | `~/.openclaw/memory/main.sqlite` | Agent long-term memory |
 | `/tmp/openclaw/` | Runtime logs |
-
----
-
-## GitHub Copilot CLI Skills
-
-Several Superpowers skills installed at `~/.copilot/skills/`:
-
-- brainstorming
-- dispatching-parallel-agents
-- executing-plans
-- finishing-a-development-branch
-- receiving-code-review
-- requesting-code-review
-- subagent-driven-development
-- systematic-debugging
-- test-driven-development
-- using-git-worktrees
-- using-superpowers
-- verification-before-completion
-- writing-plans
-- writing-skills
-
-Invoke with: `/brainstorming`, `/test-driven-development`, etc.
 
 ---
 
