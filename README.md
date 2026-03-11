@@ -67,14 +67,6 @@ OpenClaw is a self-hosted AI agent platform. It runs a local gateway that connec
      │    └── OPENCLAW_SETUP.md      ← your setup guide             │
      └──────────────────────────────────────────────────────────────┘
 
-     ┌──────────────────────────────────────────────────────────────┐
-     │            GITHUB COPILOT CLI  (this session)                │
-     │                                                              │
-     │  ~/.copilot/skills/  (Superpowers skills installed)          │
-     │    brainstorming · test-driven-development                   │
-     │    systematic-debugging · writing-plans · and more...        │
-     └──────────────────────────────────────────────────────────────┘
-
      USER ──→ Telegram ──→ Gateway ──→ OpenRouter/Ollama ──→ reply
 ---
 
